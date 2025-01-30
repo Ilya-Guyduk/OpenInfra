@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/your-username/openinfra/pkg/openinfra"
+	"github.com/Ilya-Guyduk/go-openinfra/pkg/openinfra"
 )
 
 func main() {
