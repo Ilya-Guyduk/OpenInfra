@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-  # Шаг 1: Проверка исходного кода
   checkout:
     runs-on: ubuntu-latest
     outputs:
@@ -26,16 +25,18 @@ jobs:
       - name: Find Go test files
         id: tests
         run: |
-          test_files=$(go list ./... | grep -v /vendor/)
-          echo "::set-output name=test_files::$test_files"
+          TEST_FILES=$(go list -json ./... | jq -r '.ImportPath' | jq -R -s -c 'split("\n") | map(select(. != ""))')
+          echo "test_files=$TEST_FILES" >> "$GITHUB_ENV"
 
-  # Шаг 2: Создание джобов для каждого теста
+      - name: Save output
+        run: echo "test_files=${{ env.test_files }}" >> "$GITHUB_ENV"
+
   test:
     needs: checkout
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        test_file: ${{ fromJson(needs.checkout.outputs.test_files) }}
+        test_file: ${{ fromJson(env.test_files) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
