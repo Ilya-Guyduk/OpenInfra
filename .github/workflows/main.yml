@@ -1,0 +1,50 @@
+name: Go Unit Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Шаг 1: Проверка исходного кода
+  checkout:
+    runs-on: ubuntu-latest
+    outputs:
+      test_files: ${{ steps.tests.outputs.test_files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+
+      - name: Find Go test files
+        id: tests
+        run: |
+          test_files=$(go list ./... | grep -v /vendor/)
+          echo "::set-output name=test_files::$test_files"
+
+  # Шаг 2: Создание джобов для каждого теста
+  test:
+    needs: checkout
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test_file: ${{ fromJson(needs.checkout.outputs.test_files) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+
+      - name: Run test
+        run: |
+          go test ${{ matrix.test_file }} -v
