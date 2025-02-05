@@ -1,6 +1,6 @@
 module github.com/Ilya-Guyduk/go-openinfra
 
-go 1.22.5
+go 1.22
 
 replace github.com/Ilya-Guyduk/go-openinfra/internal/infra => ./internal/infra
 
