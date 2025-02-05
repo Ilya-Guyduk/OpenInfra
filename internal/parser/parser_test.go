@@ -22,23 +22,23 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0
 
 providers:
-  - name: virtualbox
-    type: hypervisor
+  - name: local_virtualbox
+    type: virtualbox
     connection_details:
-      address: 192.168.1.10  # Адрес гипервизора
-      username: admin        # Имя пользователя
-      password: password     # Пароль или ключ доступа
+      address: 192.168.1.10
+      username: admin
+      password: password
 
   - name: cloud_provider
-    type: cloud
+    type: aws
     connection_details:
-      api_endpoint: https://api.cloudprovider.com  # API для создания ресурсов
-      api_key: your_api_key_here                  # Ключ API для аутентификации
+      api_endpoint: https://api.cloudprovider.com
+      api_key: your_api_key_here
 
 components:
   - type: virtual_machine
     name: local_vm
-    provider: virtualbox
+    provider: local_virtualbox
     properties:
       cpu: 2
       memory: 4GB
@@ -66,6 +66,65 @@ dependencies:
       - local_network
 `
 
+func TestProviders(t *testing.T) {
+	// Создаём временный YAML-файл
+	tmpFile, err := os.CreateTemp("", "openinfra-*.yaml")
+	assert.NoError(t, err)
+	defer os.Remove(tmpFile.Name()) // Удаляем файл после теста
+
+	_, err = tmpFile.WriteString(sampleYAML)
+	assert.NoError(t, err)
+	tmpFile.Close() // Закрываем файл, чтобы его можно было прочитать
+
+	// Вызываем функцию ParseFile
+	spec, err := ParseFile(tmpFile.Name())
+	assert.NoError(t, err)
+	assert.NotNil(t, spec)
+
+	// Получаем список провайдеров
+	providerList := spec.Providers
+	assert.NotNil(t, providerList)
+	assert.Len(t, providerList, 2, "Ожидалось 2 провайдера")
+
+	// Ожидаемый список провайдеров
+	expectedProviders := map[string]string{
+		"local_virtualbox": "virtualbox",
+		"cloud_provider":   "aws",
+	}
+
+	// Проверяем, что все провайдеры из YAML есть в списке
+	for _, provider := range providerList {
+		expectedType, exists := expectedProviders[provider.Name]
+		assert.True(t, exists, "Провайдер %s не найден в ожидаемом списке", provider.Name)
+		assert.Equal(t, expectedType, provider.Type, "Тип провайдера %s не соответствует ожидаемому", provider.Name)
+	}
+
+}
+
+func TestInfo(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "openinfra-*.yaml")
+	assert.NoError(t, err)
+	defer os.Remove(tmpFile.Name()) // Удаляем файл после теста
+
+	_, err = tmpFile.WriteString(sampleYAML)
+	assert.NoError(t, err)
+	tmpFile.Close() // Закрываем файл, чтобы его можно было прочитать
+
+	// Вызываем функцию ParseFile
+	spec, err := ParseFile(tmpFile.Name())
+	assert.NoError(t, err)
+	assert.NotNil(t, spec)
+
+	assert.Equal(t, "OpenInfra Specification", spec.Info.Title)
+	assert.Equal(t, "A specification for describing infrastructure resources and components.", spec.Info.Description)
+	assert.Equal(t, "1.0.0", spec.Info.Version)
+	assert.Equal(t, "Your Name", spec.Info.Contact.Name)
+	assert.Equal(t, "your.email@example.com", spec.Info.Contact.Email)
+	assert.Equal(t, "Apache 2.0", spec.Info.License.Name)
+	assert.Equal(t, "https://www.apache.org/licenses/LICENSE-2.0", spec.Info.License.URL)
+
+}
+
 func TestParseFile(t *testing.T) {
 	// Создаем временный файл
 	tmpFile, err := os.CreateTemp("", "openinfra-*.yaml")
@@ -83,7 +142,6 @@ func TestParseFile(t *testing.T) {
 
 	// Проверяем основную информацию
 	assert.Equal(t, "1.0.0", spec.Version)
-	assert.Equal(t, "OpenInfra Specification", spec.Info.Title)
 
 	// Проверяем ресурсы
 	assert.Len(t, spec.Resources, 2)
