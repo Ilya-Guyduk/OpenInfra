@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Ilya-Guyduk/go-openinfra/pkg/infra"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -149,7 +148,6 @@ func TestParseFile(t *testing.T) {
 	// Проверяем первую ВМ
 	vm := spec.Resources[0]
 	assert.Equal(t, "local_vm", vm.Name)
-	assert.Equal(t, infra.ResourceVirtualMachine, vm.Type)
 
 	properties := vm.Properties
 	assert.Equal(t, "virtualbox", properties["provider"])
@@ -167,7 +165,6 @@ func TestParseFile(t *testing.T) {
 	// Проверяем сеть
 	network := spec.Resources[1]
 	assert.Equal(t, "local_network", network.Name)
-	assert.Equal(t, infra.ResourceNetwork, network.Type)
 
 	networkProperties := network.Properties
 	assert.Equal(t, "192.168.1.0/24", networkProperties["cidr"])

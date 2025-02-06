@@ -1,39 +1,12 @@
 package parser
 
-import (
-	"fmt"
-
-	"github.com/Ilya-Guyduk/go-openinfra/pkg/infra"
-	"github.com/Ilya-Guyduk/go-openinfra/pkg/provider"
-)
-
 // OpenInfraSpec описывает структуру корневого документа OpenInfra
 type OpenInfraSpec struct {
 	Version      string               `yaml:"openinfra"`
 	Info         Info                 `yaml:"info"`
-	Providers    map[string]*Provider `yaml:"providers"`
+	Providers    map[string]Provider  `yaml:"providers"`
 	Resources    []ResourceDefinition `yaml:"components"`
 	Dependencies []Dependency         `yaml:"dependencies"`
-}
-
-func (ois *OpenInfraSpec) GetProviderList() []*Provider {
-	var providerList []*Provider
-	for _, provider := range ois.Providers {
-		providerList = append(providerList, provider)
-	}
-	return providerList
-}
-
-func (ois *OpenInfraSpec) GetProviderMap() map[string]*Provider {
-	return ois.Providers
-}
-
-func (ois *OpenInfraSpec) GetProviderByName(name string) (*Provider, error) {
-	if provider := ois.Providers[name]; provider != nil {
-		return provider, nil
-	} else {
-		return nil, fmt.Errorf("Provider not found!")
-	}
 }
 
 // Info содержит общую информацию о спецификации
@@ -51,12 +24,40 @@ type Info struct {
 	} `yaml:"license"`
 }
 
-// Provider — провайдер ресурсов
 type Provider struct {
-	Name              string            `yaml:"name"`
-	Type              string            `yaml:"type"`
-	ConnectionDetails map[string]string `yaml:"connection_details"`
-	Executor          provider.Provider
+	Name         string       `yaml:"name"`
+	Type         string       `yaml:"type"`
+	Connection   Connection   `yaml:"connection"`
+	Capabilities []Capability `yaml:"capabilities"`
+}
+
+type Connection struct {
+	Protocol       string         `yaml:"protocol"`
+	Host           string         `yaml:"host,omitempty"`
+	Port           int            `yaml:"port,omitempty"`
+	Endpoint       string         `yaml:"endpoint,omitempty"`
+	Authentication Authentication `yaml:"authentication"`
+}
+
+type Authentication struct {
+	Method   string `yaml:"method"`
+	Username string `yaml:"username,omitempty"`
+	Password string `yaml:"password,omitempty"`
+	APIKey   string `yaml:"api_key,omitempty"`
+}
+
+type Capability struct {
+	Name        string      `yaml:"name"`
+	Description string      `yaml:"description"`
+	Method      string      `yaml:"method"`
+	Endpoint    string      `yaml:"endpoint"`
+	Parameters  []Parameter `yaml:"parameters"`
+}
+
+type Parameter struct {
+	Name     string `yaml:"name"`
+	Type     string `yaml:"type"`
+	Required bool   `yaml:"required"`
 }
 
 // Component — описание компонента инфраструктуры
@@ -70,7 +71,7 @@ type Component struct {
 
 // ResourceDefinition описывает конкретный ресурс
 type ResourceDefinition struct {
-	Type         infra.ResourceType     `yaml:"type"`
+	Type         string                 `yaml:"type"`
 	Provider     string                 `yaml:"provider"`
 	Name         string                 `yaml:"name"`
 	Properties   map[string]interface{} `yaml:"properties"`
