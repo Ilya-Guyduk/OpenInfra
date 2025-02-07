@@ -1,10 +1,7 @@
-module github.com/Ilya-Guyduk/go-openinfra
+module github.com/Ilya-Guyduk/openinfra
 
 go 1.22
 
-replace github.com/Ilya-Guyduk/go-openinfra/internal/infra => ./internal/infra
-
-replace github.com/Ilya-Guyduk/go-openinfra/pkg/infra => ./pkg/infra
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.0
