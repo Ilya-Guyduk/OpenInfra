@@ -11,7 +11,7 @@ import (
 func ParseFile(filename string) (*OpenInfraSpec, error) {
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("не удалось прочитать файл: %w", err)
+		return nil, fmt.Errorf("Не удалось прочитать файл: %w", err)
 	}
 
 	var rawSpec struct {
