@@ -2,11 +2,11 @@ package parser
 
 // OpenInfraSpec описывает структуру корневого документа OpenInfra
 type OpenInfraSpec struct {
-	Version      string               `yaml:"openinfra"`
-	Info         Info                 `yaml:"info"`
-	Providers    map[string]Provider  `yaml:"providers"`
-	Resources    []ResourceDefinition `yaml:"components"`
-	Dependencies []Dependency         `yaml:"dependencies"`
+	Version      string              `yaml:"openinfra"`
+	Info         Info                `yaml:"info"`
+	Providers    map[string]Provider `yaml:"providers"`
+	Resources    map[string]Resource `yaml:"components"`
+	Dependencies []Dependency        `yaml:"dependencies"`
 }
 
 // Info содержит общую информацию о спецификации
@@ -60,27 +60,23 @@ type Parameter struct {
 	Required bool   `yaml:"required"`
 }
 
-// Component — описание компонента инфраструктуры
-type Component struct {
-	Type       string                 `yaml:"type"`
-	Name       string                 `yaml:"name"`
-	Provider   string                 `yaml:"provider"`
-	Properties map[string]interface{} `yaml:"properties"`
-	Actions    []string               `yaml:"actions"`
+type Action struct {
+	Name   string `yaml:"name"`
+	Method string `yaml:"method"`
 }
 
 // ResourceDefinition описывает конкретный ресурс
-type ResourceDefinition struct {
+type Resource struct {
 	Type         string                 `yaml:"type"`
 	Provider     string                 `yaml:"provider"`
 	Name         string                 `yaml:"name"`
 	Properties   map[string]interface{} `yaml:"properties"`
-	Actions      []string               `yaml:"actions"`
+	Actions      []Action               `yaml:"actions"`
 	Dependencies []Dependency           `yaml:"dependencies"`
 }
 
 // Dependency описывает зависимости между ресурсами
 type Dependency struct {
-	Resource  string   `yaml:"resource"`
+	Resource  string   `yaml:"component"`
 	DependsOn []string `yaml:"depends_on"`
 }

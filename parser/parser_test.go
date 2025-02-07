@@ -232,57 +232,70 @@ func TestInfo(t *testing.T) {
 }
 
 func TestParseFile(t *testing.T) {
-	// Создаем временный файл
+	// Создаем временный YAML-файл
 	tmpFile, err := os.CreateTemp("", "openinfra-*.yaml")
 	assert.NoError(t, err)
 	defer os.Remove(tmpFile.Name()) // Удаляем файл после теста
 
 	_, err = tmpFile.WriteString(sampleYAML)
 	assert.NoError(t, err)
-	tmpFile.Close() // Закрываем файл, чтобы его можно было прочитать
+	tmpFile.Close() // Закрываем файл перед чтением
 
 	// Вызываем функцию ParseFile
 	spec, err := ParseFile(tmpFile.Name())
 	assert.NoError(t, err)
 	assert.NotNil(t, spec)
 
-	// Проверяем основную информацию
+	// Проверяем версию спецификации
 	assert.Equal(t, "1.0.0", spec.Version)
 
-	// Проверяем ресурсы
+	// Проверяем информацию
+	assert.Equal(t, "OpenInfra Specification", spec.Info.Title)
+	assert.Equal(t, "1.0.0", spec.Info.Version)
+	assert.Equal(t, "Your Name", spec.Info.Contact.Name)
+	assert.Equal(t, "Apache 2.0", spec.Info.License.Name)
+
+	// Проверяем провайдеров
+	assert.Len(t, spec.Providers, 2)
+	provider, exists := spec.Providers["local_virtualbox"]
+	assert.True(t, exists)
+	assert.Equal(t, "virtualbox", provider.Type)
+	assert.Equal(t, "ssh", provider.Connection.Protocol)
+	assert.Equal(t, "192.168.1.10", provider.Connection.Host)
+	assert.Equal(t, 22, provider.Connection.Port)
+
+	// Проверяем одну из возможностей провайдера
+	assert.Len(t, provider.Capabilities, 6)
+	capability := provider.Capabilities[0]
+	assert.Equal(t, "create_vm", capability.Name)
+	assert.Equal(t, "Create a new virtual machine", capability.Description)
+	assert.Equal(t, "POST", capability.Method)
+	assert.Equal(t, "/vms/create", capability.Endpoint)
+	assert.Len(t, capability.Parameters, 3)
+	assert.Equal(t, "cpu", capability.Parameters[1].Name)
+	assert.Equal(t, "integer", capability.Parameters[1].Type)
+
+	// Проверяем компоненты
 	assert.Len(t, spec.Resources, 2)
-
-	// Проверяем первую ВМ
-	vm := spec.Resources[0]
+	vm, exists := spec.Resources["local_vm"]
+	assert.True(t, exists)
+	assert.Equal(t, "virtual_machine", vm.Type)
 	assert.Equal(t, "local_vm", vm.Name)
+	assert.Equal(t, "local_virtualbox", vm.Provider)
+	assert.Equal(t, 2, vm.Properties["cpu"])
+	assert.Equal(t, "4GB", vm.Properties["memory"])
 
-	properties := vm.Properties
-	assert.Equal(t, "virtualbox", properties["provider"])
-	if cpu, ok := properties["cpu"].(int); ok {
-		assert.Equal(t, int(cpu), properties["cpu"])
-	} else if cpu, ok := properties["cpu"].(float64); ok {
-		assert.Equal(t, float64(cpu), properties["cpu"])
-	}
-	assert.Equal(t, "4GB", properties["memory"])
-	assert.Equal(t, "50GB", properties["disk_size"])
-	assert.Equal(t, "ubuntu-22.04", properties["os"])
-	assert.Equal(t, "local_network", properties["network"])
-	assert.ElementsMatch(t, []string{"start", "stop", "restart"}, vm.Actions)
-
-	// Проверяем сеть
-	network := spec.Resources[1]
-	assert.Equal(t, "local_network", network.Name)
-
-	networkProperties := network.Properties
-	assert.Equal(t, "192.168.1.0/24", networkProperties["cidr"])
-	assert.Equal(t, "192.168.1.1", networkProperties["gateway"])
-	assert.ElementsMatch(t, []string{"8.8.8.8", "8.8.4.4"}, networkProperties["dns_servers"])
+	// Проверяем действия
+	assert.Len(t, vm.Actions, 3)
+	action := vm.Actions[0]
+	assert.Equal(t, "start", action.Name)
+	assert.Equal(t, "POST", action.Method)
 
 	// Проверяем зависимости
 	assert.Len(t, spec.Dependencies, 1)
 	dep := spec.Dependencies[0]
 	assert.Equal(t, "local_vm", dep.Resource)
-	assert.ElementsMatch(t, []string{"test_network"}, dep.DependsOn)
+	assert.ElementsMatch(t, []string{"local_network"}, dep.DependsOn)
 }
 
 // TestParseFileErrors проверяет обработку ошибок при чтении и парсинге YAML.

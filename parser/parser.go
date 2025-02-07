@@ -41,9 +41,11 @@ func ParseFile(filename string) (*OpenInfraSpec, error) {
 	}
 
 	var rawSpec struct {
-		Version   string     `yaml:"openinfra"`
-		Info      Info       `yaml:"info"`
-		Providers []Provider `yaml:"providers"`
+		Version      string       `yaml:"openinfra"`
+		Info         Info         `yaml:"info"`
+		Providers    []Provider   `yaml:"providers"`
+		Resources    []Resource   `yaml:"components"`
+		Dependencies []Dependency `yaml:"dependencies"`
 	}
 
 	// Парсим YAML
@@ -53,13 +55,18 @@ func ParseFile(filename string) (*OpenInfraSpec, error) {
 
 	// Создаём структуру с провайдерами в виде карты
 	spec := &OpenInfraSpec{
-		Version:   rawSpec.Version,
-		Info:      rawSpec.Info,
-		Providers: make(map[string]Provider),
+		Version:      rawSpec.Version,
+		Info:         rawSpec.Info,
+		Providers:    make(map[string]Provider),
+		Resources:    make(map[string]Resource),
+		Dependencies: rawSpec.Dependencies,
 	}
 
 	for _, p := range rawSpec.Providers {
 		spec.Providers[p.Name] = p
+	}
+	for _, r := range rawSpec.Resources {
+		spec.Resources[r.Name] = r
 	}
 
 	return spec, nil
