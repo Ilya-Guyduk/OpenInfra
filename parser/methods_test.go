@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,5 +79,5 @@ func TestExecuteCapabilityMissing(t *testing.T) {
 
 	_, err := provider.ExecuteCapability("missing-cap", nil)
 	assert.Error(t, err)
-	assert.True(t, errors.Is(err, errors.New("возможность missing-cap не найдена у провайдера test-provider")))
+	assert.EqualError(t, err, "возможность missing-cap не найдена у провайдера test-provider")
 }
