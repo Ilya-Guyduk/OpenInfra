@@ -1,4 +1,4 @@
-package examples
+package main
 
 import (
 	"fmt"
@@ -7,9 +7,15 @@ import (
 )
 
 func main() {
-	spec := parser.ParseFile("./some_file.yaml")
+	spec, err := parser.ParseFile("./some_file.yaml")
+	if err != nil {
+		fmt.Errorf("Error: %s", err)
+	}
 
 	providerList := spec.GetProviderList()
 
-	fmt.Printf(providerList)
+	for _, provider := range providerList {
+		fmt.Println(provider)
+	}
+
 }

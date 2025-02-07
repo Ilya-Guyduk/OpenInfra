@@ -1,17 +1,43 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"gopkg.in/yaml.v3"
 )
 
-// ParseFile читает и парсит YAML-файл OpenInfra
+// ParseFile читает и парсит YAML-файл OpenInfra.
 func ParseFile(filename string) (*OpenInfraSpec, error) {
+	// Проверяем, существует ли файл
+	fileInfo, err := os.Stat(filename)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, fmt.Errorf("ошибка: файл %s не найден", filename)
+		}
+		return nil, fmt.Errorf("ошибка при получении информации о файле: %w", err)
+	}
+
+	// Проверяем права на чтение файла
+	file, err := os.Open(filename)
+	if err != nil {
+		if errors.Is(err, os.ErrPermission) {
+			return nil, fmt.Errorf("ошибка: недостаточно прав для чтения файла %s", filename)
+		}
+		return nil, fmt.Errorf("ошибка при открытии файла: %w", err)
+	}
+	defer file.Close()
+
+	// Проверяем, не пуст ли файл
+	if fileInfo.Size() == 0 {
+		return nil, fmt.Errorf("ошибка: файл %s пуст", filename)
+	}
+
+	// Читаем содержимое файла
 	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("Не удалось прочитать файл: %w", err)
+		return nil, fmt.Errorf("ошибка при чтении файла %s: %w", filename, err)
 	}
 
 	var rawSpec struct {
@@ -20,17 +46,18 @@ func ParseFile(filename string) (*OpenInfraSpec, error) {
 		Providers []Provider `yaml:"providers"`
 	}
 
+	// Парсим YAML
 	if err := yaml.Unmarshal(data, &rawSpec); err != nil {
-		return nil, fmt.Errorf("ошибка при разборе YAML: %w", err)
+		return nil, fmt.Errorf("ошибка: некорректное форматирование YAML в файле %s: %w", filename, err)
 	}
 
+	// Создаём структуру с провайдерами в виде карты
 	spec := &OpenInfraSpec{
 		Version:   rawSpec.Version,
 		Info:      rawSpec.Info,
 		Providers: make(map[string]Provider),
 	}
 
-	// Добавляем провайдеров в карту
 	for _, p := range rawSpec.Providers {
 		spec.Providers[p.Name] = p
 	}
